@@ -1,0 +1,7 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.autoSave": "off",
+  "git.autofetch": true,
+  "cSpell.language": "en,pt,en-US,pt-BR"
+}
