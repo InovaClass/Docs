@@ -6,19 +6,17 @@ Esta documentação contém as instruções de como desenvolver o código do [in
 
 Todo código que representa funcionalidade estará presente na pasta `src`, que pode conter as seguintes subpastas:
 
-- `assets`: Contém arquivos estáticos, dentre eles, os arquivos **.svg**
+- `assets`: Contém arquivos estáticos como as imagens.
 - `components`: Contém os componentes reutilizáveis. Exemplo: `Button.tsx`, `Header.tsx`
 - `config`: Configurações de serviços. Exemplo: **Firebase**
 - `contexts`: Contém os contextos globais. Exemplo: **ThemeContext**
-- `data`: Contém dados padrão utilizados. Exemplo: pontos comportamentais
-- `hooks`: Contém os hooks customizados. Exemplo: **UseThemeContext**
+- `data`: Contém dados padrão utilizados. Exemplo: **Pontos comportamentais**
+- `hooks`: Contém os hooks customizados. Exemplo: **useMenu**
 - `messages`: Contém as mensagens de sucesso e erro
-- `models`: Contém a definição dos métodos de cada serviço
-- `pages`: Contém as páginas do app. Exemplo: `HomePage.tsx`, `LoginPage.tsx`
-- `providers`: Contém os provedores globais. Exemplo: **ThemeProvider**
+- `models`: Contém a definição do `schema` de um dado a ser salvo no banco de dados
+- `pages`: Contém as páginas do app. Exemplo: `Home.tsx`, `Login.tsx`
 - `services`: Contém as consultas dos serviços externos. Exemplo: consultas no banco de dados
 - `themes`: Contém os temas do app (dark, light, etc.)
-- `types`: Contém as definições dos tipos de dados referentes às `collections`
 - `utils`: Contém as funções genéricas. Deve conter arquivos separados para funções específicas como:
   - `generics`: Funções que não se enquadram em uma nomenclatura específica. Exemplo: `delay`
   - `getters`: Funções com o prefixo `get`
@@ -45,63 +43,32 @@ Dessa forma, é possível importar essas funções através do _alias_ `@/utils`
 npm run generate MyComponent
 ```
 
-Dessa forma, será criado o componente `MyComponent` dentro da pasta `components`, seguindo o modelo presente em `generators/templates`. É necessário exportar manualmente no arquivo `index.ts` conforme citado no tópico anterior. Exemplo:
-
-```ts
-export * from './MyComponent'
-```
+Dessa forma, será criado o componente `MyComponent` dentro da pasta `components`, seguindo o modelo presente em `generators/templates`.
 
 A pasta `src/components` deve conter apenas os componentes que são utilizados em mais de um local, e as páginas devem estar na pasta `pages` e seguir a relação da `url`.
 
 Ao criar a página `Teacher` renderizada através da _url_ `/teacher`, o componente principal estará contido no arquivo `index.tsx` e os componentes utilizados apenas nessa página estarão presentes na mesma pasta. No caso de mais de um componente, é recomendado criar uma nova pasta `components` nesse diretório.
 
-Para a _url_ `/teacher/game`, a página `Game` estará na pasta `Teacher`. Atualmente, temos a seguinte estrutura:
+Para a _url_ `/teacher/game`, a página `Game` estará na pasta `Teacher` e assim por diante. Na estrutura abaixo, a página `Objective` estará presente na _url_ `/teacher/game/missions/mission/objective` e a página `Profile` estará presente na _url_ `/teacher/profile`
 
 ```
 src/pages/Teacher
 ├── Game
 │   ├── Missions
 │   │   ├── Mission
-│   │   │   ├── index.tsx
-│   │   │   ├── use-load-data.ts
-│   │   │   ├── use-mission.ts
-│   │   │   └── use-mutate-data.ts
-│   │   ├── index.tsx
-│   │   ├── use-load-data.ts
-│   │   ├── use-missions.ts
-│   │   └── use-mutate-data.ts
-│   ├── components
-│   │   ├── Actions.tsx
-│   │   ├── BehaviorPoints.tsx
-│   │   ├── ModifyPointsManually.tsx
-│   │   ├── StudentsForm.tsx
-│   │   ├── StudentsTable.tsx
-│   │   ├── index.ts
-│   │   ├── schema.ts
-│   │   ├── styles.ts
-│   │   ├── types.ts
-│   │   └── utils.ts
+│   │   │   ├── Objective
+├── Profile
 │   ├── index.tsx
-│   ├── use-game.ts
-│   ├── use-load-data.ts
-│   ├── use-mutate-data.ts
-│   └── utils.ts
-├── components
-│   ├── Header.tsx
-│   ├── MyClassCard.tsx
-│   ├── MyClassForm.tsx
-│   ├── MyClasses.tsx
-│   ├── Welcome.tsx
-│   ├── index.ts
-│   ├── schema.ts
-│   └── styles.ts
+│   └── style.ts
 ├── index.tsx
-└── use-my-classes.ts
+├── use-component-handler.ts
+├── use-data-fetch.ts
+└── use-data-mutation.ts
 ```
 
-## Componentes de UI e Hooks
+## Componentes de UI, Hooks e Contextos
 
-Atualmente, o app conta com componentes e _hooks_ customizados para lidar com eventos na interface. Dentre os componentes, temos: `Alert`, `Dialog`, `Loader`, `Menu`, `Modal`, etc. E dentre os _hooks_, temos: `useAlert`, `useCheck`, `useDialog`, `useMenu`, `useOpen`, etc.
+Atualmente, o app conta com componentes, contextos e hooks customizados para lidar com eventos na interface. Dentre os contextos, temos: `Notification` e `Dialog`. Hooks para lidar com ações referentes ao `Menu`, `Stepper`, e `CheckList`, além de `Loader`, `Modal`.
 
 ### Modais
 
@@ -128,91 +95,113 @@ Já no componente pai, temos:
 
 ```tsx
 export const MyComponent = () => {
-  const { open, handleOpen, handleClose } = useOpen()
+  const [open, setOpen] = useState(false)
   return (
     <>
-      <Button onClick={handleOpen}>Abrir Modal</Button>
-      <MyModal isOpened={open} handleClose={handleClose} />
+      <Button onClick={() => setOpen(true)}>Abrir Modal</Button>
+      <MyModal isOpened={open} handleClose={() => setOpen(false)} />
     </>
   )
 }
 ```
 
-Percebe-se que foi utilizado o _custom hook_ `useOpen` para lidar com as ações do **modal**. Esse _hook_ também pode ser utilizado para diversas ações que representam estados _booleanos_, como expandir e retroceder uma lista, etc.
+### Notificações e Confirmação de Ações
 
-### Dialogs
-
-Para `Dialogs`, temos uma estrutura parecida com a dos `Modais`, porém, nesse caso, iremos utilizar o _hook_ `useDialog` ao invés do genérico `useOpen`. Um exemplo de uso é quando o usuário for deletar algum dado. Para esses casos, devemos exibir um _Dialog_ exigindo a confirmação dessa ação. Exemplo:
+Para esses componentes, temos um contexto global dedicado. Para exibir uma notificação, basta instanciar o contexto e chamar a função `notification`, como pode ser visto abaixo:
 
 ```tsx
 export const MyComponent = () => {
-  const { dialogProps, handleDialogOpen, handleDialogClose } = useDialog()
+  const notification = useNotificationContext()
+
+  const { mutate, isPending } = useMutation({
+    mutationKey: ['create-item'],
+    mutationFn: createItem,
+    onSuccess: () => {
+      notification({
+        severity: 'success',
+        title: 'Item criado com sucesso!'
+      })
+      refetch()
+    },
+    onError: (error) => {
+      console.error(error)
+      notification({
+        severity: 'error',
+        title: 'Não foi possível criar o item',
+        description: 'Tente novamente',
+        autoHideDuration: 5000
+      })
+    }
+  })
+  return <Button onClick={() => mutate(item)}>Criar item</Button>
+}
+```
+
+Para exibir um `Dialog` para confirmar uma ação, podemos fazer da seguinte forma:
+
+```tsx
+export const MyComponent = () => {
+  const dialog = useDialogContext()
 
   const handleDelete = () => {
     // lógica de exclusão
-    handleDialogClose()
+    dialog.close()
   }
 
   return (
-    <>
-      <Button
-        onClick={() =>
-          handleDialogOpen({
-            title: 'Deseja deletar esse dado?',
-            handleAccept: handleDelete
-          })
-        }
-      >
-        Excluir
-      </Button>
-      <Dialog {...dialogProps} />
-    </>
+    <Button
+      onClick={() =>
+        dialog.show({
+          title: 'Deseja deletar esse dado?',
+          handleAccept: handleDelete
+        })
+      }
+    >
+      Excluir
+    </Button>
   )
 }
 ```
 
 ### Fique atento à pasta hooks
 
-A pasta `src/hooks` contém funções extremamente importantes para a construção da aplicação, e já existe implementação de todos eles no código. Por isso, é importante ter o conhecimento de todos eles.
+A pasta `src/hooks` contém funções extremamente importantes para a construção da aplicação. Por isso, é importante ter o conhecimento de todos eles, dessa forma evitamos a duplicação de código e garantimos o melhor funcionamento da nossa aplicação.
 
-## Criação e implementação de requisições à API
+## Criação dos serviços para requisições à API
 
-Dada a _collection_ `myClasses`, devemos primariamente definir o `model` e o `service`. Dessa forma, teremos a estrutura pronta para ser utilizada em nossos componentes.
+Dada a _collection_ `classes`, devemos primariamente definir o `model` e o `service`. Dessa forma, teremos a estrutura pronta para ser utilizada em nossos componentes.
 
-Seguindo o exemplo, devemos realizar os seguintes passos para criar os métodos relacionados a collection `myClasses`:
+Seguindo o exemplo, devemos realizar os seguintes passos para criar os métodos relacionados a collection `classes`:
 
 1. Criar o `model`
 
-`models/my-class.ts`
+`models/class.ts`
 
 ```ts
-export type TMyClassStatus = 'active' | 'archived'
+export type TClassStatus = 'active' | 'archived'
 
-export type TMyClassModel = {
+export type TClassModel = {
   id: string
   userId: string
-  status: TMyClassStatus
+  status: TClassStatus
   name: string
   description: string | null
   createdAt: string
   updatedAt: string
 }
-
 ```
-
-`types/index.ts`
 
 ```ts
-export * from './my-class'
+export * from './class'
 ```
 
-O `model` representa a estrutura do objeto `myClass` no banco de dados.
+O `model` representa a estrutura do objeto `Class` no banco de dados.
 
 ---
 
 2. Criar o `service`
 
-`services/my-class.ts`
+`services/class.ts`
 
 ```ts
 import {
@@ -224,18 +213,18 @@ import {
   where
 } from 'firebase/firestore'
 import { db } from '@/config'
-import { TMyClassModel } from '@/models'
+import { TClassModel } from '@/models'
 import { findDoc, getDocsData, getTimestamp } from '@/utils'
 
-export class MyClassService {
-  private collectionName = 'myClasses'
+export class ClassService {
+  private collectionName = 'classes'
 
-  create = async (myClass: Omit<TMyClassModel, 'id'>) => {
-    await addDoc(collection(db, this.collectionName), myClass)
+  create = async (Class: Omit<TClassModel, 'id'>) => {
+    await addDoc(collection(db, this.collectionName), Class)
   }
 
   findOne = async (id: string) => {
-    const result = await findDoc<TMyClassModel>({
+    const result = await findDoc<TClassModel>({
       id,
       collectionName: this.collectionName
     })
@@ -249,12 +238,12 @@ export class MyClassService {
       where('status', '==', status)
     )
     const data = await getDocsData(q)
-    return data as TMyClassModel[]
+    return data as TClassModel[]
   }
 
-  update = async (myClass: TMyClassModel) => {
-    await updateDoc(doc(db, this.collectionName, myClass.id), {
-      ...myClass,
+  update = async (Class: TClassModel) => {
+    await updateDoc(doc(db, this.collectionName, Class.id), {
+      ...Class,
       updatedAt: getTimestamp()
     })
   }
@@ -263,74 +252,359 @@ export class MyClassService {
 
 Os `services` devem conter um ou mais métodos com a seguinte nomenclatura: `find`, `findOne`, `create`, `createMany`, `update`, `updateMany`, `remove` e `removeMany`.
 
-Os métodos devem obrigatoriamente estarem escritos em forma e `arrow functions` para garantir a referência ao `this`, ou seja, dessa forma o `this.collectionName` retorna o valor `myClasses`.
+Os métodos devem obrigatoriamente estarem escritos em forma e `arrow functions` para garantir a referência ao `this`, ou seja, dessa forma o `this.collectionName` retorna o valor corretamente.
 
 ---
 
 Com esses passos realizados, agora é possível utilizar essas funções para fazer as requisições, que deverão ser feitas usando o `React Query`.
 
-Seguindo o exemplo, após a criação do componente de página `MyClasses.tsx`, foi criado o _hook_ `use-my-classes.ts`, onde a classe foi instanciada da seguinte forma:
+## Mensagens de Notificações
+
+Deve ser criado um objeto contendo as mensagens para cada método de uma operação, como pode ser visto na definição do tipo abaixo:
 
 ```ts
-const myClassService = new MyClassService()
+type TMessageVariant = {
+  find: string
+  findMany: string
+  create: string
+  createMany: string
+  update: string
+  updateMany: string
+  delete: string
+  deleteMany: string
+}
+
+export type TMessage = {
+  error: TMessageVariant
+  success: TMessageVariant
+}
 ```
 
-Para os métodos do tipo `get`, utilizamos a função `useQuery`, onde devemos passar os parâmetros conforme o exemplo abaixo:
+Esses objetos, devem estar presentes na pasta `messages`. O exemplo abaixo define as mensagens das operações relacionadas às classes.
+
+`messages/class.ts`
 
 ```ts
-  const {
-    data: myClasses,
-    error: findMyClassesError,
-    isPending: isMyClassesPending,
-    refetch
-  } = useQuery({
-    queryKey: ['findMyClasses', args],
-    queryFn: async () => await myClassService.find(args)
-  })
+import { TMessage } from './types'
+
+export const classMessage: TMessage = {
+  error: {
+    find: 'Não foi possível carregar a classe',
+    findMany: 'Não foi possível carregar as classes',
+    create: 'Não foi possível criar a classe',
+    createMany: 'Não foi possível criar as classes',
+    update: 'Não foi possível atualizar a classe',
+    updateMany: 'Não foi possível atualizar as classes',
+    delete: 'Não foi possível deletar a classe',
+    deleteMany: 'Não foi possível deletar as classes'
+  },
+  success: {
+    find: 'Classe carregada com sucesso',
+    findMany: 'Classes carregadas com sucesso',
+    create: 'Classe criada com sucesso',
+    createMany: 'Classes criadas com sucesso',
+    update: 'Classe atualizada com sucesso',
+    updateMany: 'Classes atualizadas com sucesso',
+    delete: 'Classe deletada com sucesso',
+    deleteMany: 'Classes deletadas com sucesso'
+  }
+}
 ```
 
-Para lidar com os alertas de erro ou sucesso, temos o _hook_ `useAlert`:
+## Separação de arquivos na implementação de um componente
 
-```ts
-const { alert, handleAlertOpen } = useAlert()
+A medida que é a quantidade de linhas de código em um arquivo aumenta, é interessantes separar as funcionalidades em arquivos diferentes. Dessa forma, é possível compreender melhor a repensabilidade de cada funcionalidade.
+
+Dependendo do componente, ele pode conter os seguintes arquivos:
+
+- `index.tsx`: Arquivo principal
+- `schema.ts`: Definição do objeto do formulário
+- `style.ts`: Estilos CSS
+- `types.ts`: Definição de tipos
+- `use-component-handler.ts`: Hook com as funções de manipulação de estado
+- `use-data-fetch.ts`: Hook para as funções de fetch de dados (GET) utilizando o `useQuery`
+- `use-data-mutation.ts`: Hook para as funções de mutação de dados (POST, UPDATE, DELETE) utilizando o `useMutation`
+- `utils.ts`: Funções genéricas a serem utilizadas apenas neste componentes
+
+As vezes não é necessário criar um novo arquivo como o `types.ts`, `style.ts` e `utils.ts`. Mas se o componente necessitar de um esquema de formulário, fetch e mutação de dados, essas funções devem estar separadas conforme a descrição acima.
+
+Também existem páginas que contem outros componentes além do `index.ts`. Exemplo: `Form.tsx`, `List.tsx`, `Card.tsx`. Cado quantidade deja maior que dois, é indicado criar uma nova pasta `componentes` dentro desse diretório.
+
+### Exemplo prático
+
+Dado o componente da página `Classes.tsx`, temos o arquivo `index.tsx`:
+
+```tsx
+import { useComponentHandler } from './use-component-handler'
+
+export const TeacherGame = () => {
+  const props = useComponentHandler()
+
+  if (props.isLoading) return <Loader />
+
+  return <Classes {...props} />
+}
 ```
 
-Dessa forma, podemos monitorar as mudanças de estado da variável `findMyClassesError` através do `useEffect` e chamar o método `handleOpenAlert`:
+`use-data-fetch`:
 
-```ts
-useEffect(() => {
-  if (!findMyClassesError) return
-  console.error(findMyClassesError)
-  handleAlertOpen({
-    severity: 'error',
-    title: myClassError.readAll
-  })
-}, [findMyClassesError, handleAlertOpen])
-```
+```tsx
+import { useEffect } from 'react'
+import { useQueries } from '@tanstack/react-query'
+import { ClassService, StudentService } from '@/services'
+import { useNotificationContext } from '@/contexts'
+import { genericMessage } from '@/messages'
 
-Para as mutações, devemos seguir a seguinte estrutura:
+const classService = new ClassService()
+const studentService = new StudentService()
 
-```ts
-const { mutate: createMyClassMutate, isPending: isCreateMyClassPending } =
-    useMutation({
-      mutationKey: ['createMyClass'],
-      mutationFn: myClassService.create,
-      onSuccess: () => {
-        refetch()
-        handleAlertOpen({
-          severity: 'success',
-          title: myClassSuccess.create
-        })
-        handleFormClose()
+export const useDataFetch = ({
+  userId,
+  classId
+}: {
+  userId: string
+  classId: string
+}) => {
+  const notification = useNotificationContext()
+
+  const [
+    { data: classData, error: classError, isFetching: isClassFetching },
+    {
+      data: studentsData,
+      error: studentsError,
+      isFetching: isStudentsFetching,
+      refetch: studentsRefetch
+    }
+  ] = useQueries({
+    queries: [
+      {
+        queryKey: ['findClass', classId],
+        queryFn: async () => await classService.findOne(classId),
+        enabled: !!classId
       },
-      onError: (error) => {
-        console.error(error)
-        handleAlertOpen({
-          severity: 'error',
-          title: myClassError.create
-        })
+      {
+        queryKey: ['findStudents', classId],
+        queryFn: async () => await studentService.find(classId),
+        enabled: !!classId
       }
-    })
+    ]
+  })
+
+  useEffect(() => {
+    if (classError || studentsError) {
+      classError && console.error(classError)
+      studentsError && console.error(studentsError)
+      notification({
+        severity: 'error',
+        title: genericMessage.error.findMany
+      })
+    }
+  }, [classError, studentsError, notification])
+
+  const isFetching = isClassFetching || isStudentsFetching
+
+  return {
+    classData,
+    studentsData,
+    isFetching,
+    studentsRefetch
+  }
+}
 ```
 
-Com isso, temos o que é necessário pa lidar com as requisições do nosso aplicativo
+Para os métodos do tipo `get`, utilizamos a função `useQuery` ou `useQueries`.
+
+```ts
+const {
+  data: classes,
+  error: classesError,
+  isPending: isClassesPending,
+  refetch
+} = useQuery({
+  queryKey: ['findClasses', args],
+  queryFn: async () => await classService.find(args)
+})
+```
+
+Para lidar com os alertas de erro ou sucesso, temos o _hook_ `useNotificationContext`:
+
+```ts
+const notification = useNotificationContext()
+```
+
+Dessa forma, podemos monitorar as mudanças de estado da variável `classesError` através do `useEffect` e chamar a função `notification`.
+
+Para as mutações, devemos seguir a seguinte estrutura no arquivo `use-data-mutation`:
+
+```ts
+const { mutate: classMutationCreate, isPending: isClassMutationCreatePending } =
+  useMutation({
+    mutationKey: ['createClass'],
+    mutationFn: ClassService.create,
+    onSuccess: () => {
+      refetch()
+      notification({
+        severity: 'success',
+        title: classMessage.success.create
+      })
+      handleFormClose()
+    },
+    onError: (error) => {
+      console.error(error)
+      notification({
+        severity: 'error',
+        title: classMessage.error.create
+      })
+    }
+  })
+```
+
+O arquivo `use-component-handler` une os dois hooks acima.
+
+## Formulários
+
+Os fomulários geralmente são criados utilizando um `schema` definido com a biblioteca `yup` e implementação com o `react-hook-form`.
+
+O `schema` é definido conforme o código abaixo:
+
+```ts
+import * as yup from 'yup'
+
+export const schema = yup.object({
+  name: yup.string().required('Nome da classe é obrigatório'),
+  description: yup.string()
+})
+
+export type TFormData = yup.InferType<typeof schema>
+```
+
+E a implementação segue o principio abaixo:
+
+```tsx
+import { useEffect, useMemo } from 'react'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { Button, FormControl, TextField } from '@mui/material'
+import { Modal } from '@/components'
+import { TClassModel } from '@/models'
+import { schema, TFormData } from './schema'
+
+export type TClassFormProps = {
+  isOpened: boolean
+  myClass: TClassModel | null
+  handleClose(): void
+  onSubmit(data: TFormData): void
+}
+
+export const ClassForm = ({
+  isOpened,
+  myClass,
+  onSubmit,
+  handleClose
+}: TClassFormProps) => {
+  const defaultValues: TFormData = useMemo(
+    () => ({
+      name: myClass?.name ?? '',
+      description: myClass?.description ?? ''
+    }),
+    [myClass]
+  )
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors }
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues
+  })
+
+  useEffect(() => {
+    reset(defaultValues)
+  }, [defaultValues, reset])
+
+  return (
+    <Modal
+      title={!myClass ? 'Criar uma nova classe' : 'Editar classe'}
+      isOpened={isOpened}
+      handleClose={handleClose}
+    >
+      <FormControl
+        component="form"
+        role="form"
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
+        fullWidth
+      >
+        <TextField
+          {...register('name')}
+          type="text"
+          label="Nome da classe"
+          defaultValue={myClass?.name}
+          error={!!errors.name}
+          helperText={errors.name?.message}
+          sx={{ mb: 2 }}
+        />
+        <TextField
+          {...register('description')}
+          type="text"
+          label="Descrição da classe"
+          defaultValue={myClass?.description}
+          error={!!errors.description}
+          helperText={errors.description?.message}
+          sx={{ mb: 2 }}
+        />
+        <Button type="submit" variant="contained">
+          Salvar
+        </Button>
+      </FormControl>
+    </Modal>
+  )
+}
+```
+
+Como o formulário acima apresenta estados para criação e edição de conteúdo, é necessário definir o `defaultValues` e o `reset` no `useEffect`.
+
+E obrigatoriamente deve possui os parâmetros `error` e `helperText` para exibir as mensagens de validão definidas do `schema`.
+
+Já a função `onSubmit` passada via props, é implementada no componente principal dentro do hook `use-component-handler`.
+
+```tsx
+const props = useComponentHandler()
+return <ClassForm {...props} />
+```
+
+```ts
+const { classMutationCreate, classMutationUpdate, isPending } = useDataMutation(
+  {
+    classId: myClass?.id,
+    handleFormClose,
+    refetch: classesRefetch
+  }
+)
+
+const handleClassSubmit = async ({
+  name,
+  description
+}: {
+  name: string
+  description?: string
+}) => {
+  const timestamp = getTimestamp()
+  !myClass
+    ? classMutationCreate({
+        createdAt: timestamp,
+        description: description || null,
+        name,
+        status: 'active',
+        updatedAt: timestamp,
+        userId
+      })
+    : classMutationUpdate({
+        ...myClass,
+        description: description || null,
+        name,
+        updatedAt: timestamp
+      })
+}
+```
